@@ -37,7 +37,20 @@ class CWSDataQuery(object):
         return NotImplemented
     
 class TestCase(CWSDataQuery):
-    def __init__(self,TenderType,MessageType,Host,IndustryType,Workflow,Environment,CardType,EcommSecInd,Level2Ind,BillPayInd,*cardsecargs):
+    def __init__(self):
+        self._exists = False
+        
+    def getRecord(self,recordid):
+        url = "http://localhost:2480/document/" + globalvars.DBNAME + "/" + recordid[1:] +"/*:1"
+        r = requests.get(url, auth=HTTPBasicAuth('admin','admin'))
+        tc_resp = json.loads(r.text)
+        self._recordid = tc_resp["@rid"]
+        self._exists = True
+        self.TestCaseInfo = tc_resp["TestCaseInfo"]
+        del tc_resp["TestCaseInfo"]
+        self.TestData = tc_resp
+    
+    def createRecord(self,TenderType,MessageType,Host,IndustryType,Workflow,Environment,CardType,EcommSecInd,Level2Ind,BillPayInd,*cardsecargs):
         self.Environment = Environment
         self.MessageType = MessageType
         self.Host = Host
@@ -48,13 +61,37 @@ class TestCase(CWSDataQuery):
         self.EcommSecInd = EcommSecInd
         self.Level2Ind = Level2Ind
         self.BillPayInd = BillPayInd
-        self.cardsecargs = cardsecargs        
+        self.cardsecargs = cardsecargs
+        self.checkExists()
+        if self._exists:
+            return
         
-    def getRecord(self):
+        self.RecordObjects = {"Credentials":Credentials(self.Environment,self.MessageType),"Service":Service(self.Host,self.Workflow),"Merchant":Merchant(self.IndustryType,self.Environment,self.MessageType),
+                              "Application":Application(),"Level2Data":Level2Data(self.Level2Ind),"TransactionData":TransactionData(self.TenderType,self.IndustryType,self.BillPayInd),
+                              "CardData":CardData(self.Environment,self.CardType),"CardSecurityData":CardSecurityData(self.TenderType,*self.cardsecargs),
+                              "EcommerceSecurityData":EcommerceSecurityData(self.EcommSecInd),"InterchangeData":InterchangeData(self.BillPayInd)}
+        
+        for classname, classobj in self.RecordObjects.items():
+            if not classobj.exists:
+                self.getDependentRecord(classname,classobj)
+        
+        TestCase = {}        
+        for classname, classobj in self.RecordObjects.items():
+            if classobj.exists:
+                TestCase[classname] = classobj.recordid
+        
+        TestCase["TestCaseInfo"] = self.TestCaseInfo
+        TestCase["@class"] = "TestCase"
+        header = {"content-type":"application/json"}
+        r = requests.post("http://localhost:2480/document/" + globalvars.DBNAME, data=json.dumps(TestCase), headers=header, auth=HTTPBasicAuth('admin','admin'))
+        self._exists = True
+        self._recordid = r.text
+    
+    def checkExists(self):
         query = "select from TestCase where"
         self.TestCaseInfo = {}
         for key, value in self.__dict__.items():
-            if key != "cardsecargs" and key != "TestCaseInfo":
+            if key not in ["_exists","cardsecargs","TestCaseInfo"]:
                 query += " TestCaseInfo." + key + " = '" + str(value) + "' and"
                 self.TestCaseInfo[key] = str(value)
         for arg in globalvars.CARDSECARGS:
@@ -72,28 +109,6 @@ class TestCase(CWSDataQuery):
         else:
             self._exists = True
             self._recordid = json.loads(r1.text)["result"][0]["@rid"]
-    
-    def createRecord(self):
-        self.RecordObjects = {"Credentials":Credentials(self.Environment,self.MessageType),"Service":Service(self.Host,self.Workflow),"Merchant":Merchant(self.IndustryType,self.Environment,self.MessageType),
-                         "Application":Application(),"Level2Data":Level2Data(self.Level2Ind),"TransactionData":TransactionData(self.TenderType,self.IndustryType,self.BillPayInd),
-                         "CardData":CardData(self.Environment,self.CardType),"CardSecurityData":CardSecurityData(self.TenderType,*self.cardsecargs),
-                         "EcommerceSecurityData":EcommerceSecurityData(self.EcommSecInd),"InterchangeData":InterchangeData(self.BillPayInd)}
-        
-        for classname, classobj in self.RecordObjects.items():
-            if not classobj.exists:
-                self.getDependentRecord(classname,classobj)
-        
-        TestCase = {}        
-        for classname, classobj in self.RecordObjects.items():
-            if classobj.exists:
-                TestCase[classname] = classobj.recordid
-        
-        TestCase["TestCaseInfo"] = self.TestCaseInfo
-        TestCase["@class"] = "TestCase"
-        header = {"content-type":"application/json"}
-        r = requests.post("http://localhost:2480/document/" + globalvars.DBNAME, data=json.dumps(TestCase), headers=header, auth=HTTPBasicAuth('admin','admin'))
-        self._exists = True
-        self._recordid = r.text
     
     def getDependentRecord(self,classname,classobj):
         DepClassName = globalvars.CLASS_DEPENDENCIES[classname]        
@@ -116,7 +131,31 @@ class TestCase(CWSDataQuery):
     
     @property    
     def exists(self):
-        return self._exists    
+        return self._exists
+    
+    @property
+    def dispStr(self):
+        if not self._exists:
+            return None
+        self._dispStr = self.TestCaseInfo["MessageType"]
+        self._dispStr += "-" + self.TestCaseInfo["Host"].replace(" ","-")
+        self._dispStr += "-" + self.TestCaseInfo["IndustryType"]
+        self._dispStr += "-" + self.TestCaseInfo["CardType"]
+        if self.TestCaseInfo["Workflow"] != "None":
+            self._dispStr += "-" + self.TestCaseInfo["Workflow"]
+        if self.TestCaseInfo["EcommSecInd"] != "None":
+            self._dispStr += "-" + self.TestCaseInfo["EcommSecInd"]
+        if self.TestCaseInfo["Level2Ind"] != "None":
+            self._dispStr += "-" + "Level2:" + self.TestCaseInfo["Level2Ind"]
+        if self.TestCaseInfo["BillPayInd"] != "None":
+            self._dispStr += "-" + "BillPay:" + self.TestCaseInfo["BillPayInd"]
+        if self.TestCaseInfo["CVData"] != "False":
+            self._dispStr += "-" + "CVData"
+        if self.TestCaseInfo["AVSData"] != "False":
+            self._dispStr += "-" + "AVSData"
+        if self.TestCaseInfo["IntlAVSData"] != "False":
+            self._dispStr += "-" + "IntlAVSData"
+        return self._dispStr    
    
 class Credentials(CWSDataQuery):
     def __init__(self,Environment,MessageType):
@@ -412,12 +451,19 @@ class InterchangeData(CWSDataQuery):
     def exists(self):
         return self._exists
             
-def getClassRecords(classname):
-    url = "http://localhost:2480/query/" + globalvars.DBNAME + "/sql/select from " + classname
+def getClassRecordIds(classname):
+    url = "http://localhost:2480/query/" + globalvars.DBNAME + "/sql/select @rid from " + classname
     r1 = requests.get(url, auth=HTTPBasicAuth('admin','admin'))
-    return json.loads(r1.text)
-
+    rids = []
+    queryresults = json.loads(r1.text)["result"]
+    if queryresults == []:
+        return rids
+    for result in queryresults:
+        rids.append(result["rid"])
+    return rids
+"""
 def getRecordById(rid):
     url = "http://localhost:2480/document/" + globalvars.DBNAME + "/" + rid[1:] + "/*:1"
     r1 = requests.get(url, auth=HTTPBasicAuth('admin','admin'))
     return json.loads(r1.text)
+"""

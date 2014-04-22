@@ -3,15 +3,12 @@ import tkinter as tk
 class MainView(tk.Frame):
     def __init__(self,master=None):
         tk.Frame.__init__(self, master)
-        self.grid()
-        self.main_frame = tk.Frame(self,bd=3)           
-        self.main_frame.grid(sticky=tk.NW,row=0,column=0)
-        #self.main_frame.grid_propagate(0)
+        self.grid(sticky=tk.N+tk.S+tk.E+tk.W)
 
 class InputFrame:
     def __init__(self,frame,title,row,column):
         self.input_frame = tk.Frame(frame,bd=4,relief="groove")
-        self.input_frame.grid(sticky=tk.N+tk.E+tk.S+tk.W,row=row,column=column)
+        self.input_frame.grid(sticky=tk.N+tk.S+tk.E+tk.W,row=row,column=column)        
         if title != None:
             self.title = tk.Label(self.input_frame,text=title)
             self.title.grid(row=0,column=0,columnspan=2)
@@ -49,7 +46,7 @@ class InputFrame:
         self.button[name] = tk.Button(self.input_frame,text=name)
         self.button[name].grid(sticky=tk.W+tk.E,row=rowind+1,column=0)
         
-    def createListbox(self,name):
+    def createListbox(self,name):        
         if "listbox" not in self.__dict__.keys():
             self.listvar = {}
             self.scroll = {}
@@ -57,12 +54,12 @@ class InputFrame:
         self.listvar[name] = tk.StringVar()
         rowind = self.input_frame.grid_size()[1]
         self.scroll[name] = tk.Scrollbar(self.input_frame,orient=tk.VERTICAL)
-        self.scroll[name].grid(sticky=tk.NW+tk.SW,row=rowind+1,column=1)
+        self.scroll[name].grid(sticky=tk.NE+tk.SE,row=rowind+1,column=1)
         self.listbox[name] = tk.Listbox(self.input_frame,listvariable=self.listvar[name],activestyle="dotbox",yscrollcommand=self.scroll[name].set)
-        self.listbox[name].grid(sticky=tk.W,row=rowind+1,column=0)
-        self.scroll[name]["command"] = self.listbox[name].yview
+        self.listbox[name].grid(sticky=tk.W,row=rowind+1,column=0)              
+        self.scroll[name]["command"] = self.listbox[name].yview        
         
-    def updateListbox(self,name,selectionlist):
+    def updateListbox(self,name,selectionlist):        
         temp = ""
         length = 20
         for item in sorted(selectionlist):
@@ -70,7 +67,7 @@ class InputFrame:
             if len(item) > length:
                 length = len(item)            
         self.listvar[name].set(temp)
-        self.listbox[name]["width"] = length+1
+        self.listbox[name]["width"] = length+10
         
     def createCanvas(self,name,disptext):
         if "canvas" not in self.__dict__.keys():
