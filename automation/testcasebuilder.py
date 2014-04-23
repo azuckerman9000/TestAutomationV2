@@ -111,15 +111,14 @@ class TestCase(CWSDataQuery):
             self._recordid = json.loads(r1.text)["result"][0]["@rid"]
     
     def getDependentRecord(self,classname,classobj):
-        DepClassName = globalvars.CLASS_DEPENDENCIES[classname]        
+        DepClassName = globalvars.CLASS_DEPENDENCIES[classname] 
         if DepClassName != None:
             DepClassObj = self.RecordObjects[globalvars.CLASS_DEPENDENCIES[classname]]
             if not DepClassObj.exists:
                 self.getDependentRecord(DepClassName,DepClassObj)
-            else:
-                classobj.getRecord(DepClassObj.classkey)
+            classobj.getRecord(DepClassObj.classkey)
         else:
-            classobj.getRecord()           
+            classobj.getRecord()                      
             
     @property    
     def recordid(self):
@@ -461,9 +460,15 @@ def getClassRecordIds(classname):
     for result in queryresults:
         rids.append(result["rid"])
     return rids
-"""
-def getRecordById(rid):
-    url = "http://localhost:2480/document/" + globalvars.DBNAME + "/" + rid[1:] + "/*:1"
-    r1 = requests.get(url, auth=HTTPBasicAuth('admin','admin'))
-    return json.loads(r1.text)
-"""
+
+def getFieldNames():
+        fieldnames = []
+        for classname in globalvars.CLASS_DEPENDENCIES.keys():
+            url = "http://localhost:2480/class/" + globalvars.DBNAME + "/" + classname
+            r = requests.get(url, auth=HTTPBasicAuth('admin','admin'))
+            properties = json.loads(r.text)["properties"]
+            for prop in properties:
+                if prop["type"] == "STRING":
+                    fieldnames.append(prop["name"])
+            fieldnames += globalvars.EMBEDDEDMAPFIELDS
+        return list(set(fieldnames))

@@ -67,3 +67,7 @@ CLASS_DEPENDENCIES = {"Credentials":None,
                       "CardSecurityData":"CardData",
                       "EcommerceSecurityData":"CardData",
                       "InterchangeData":None}
+
+global EMBEDDEDMAPFIELDS
+EMBEDDEDMAPFIELDS = ["AVSData:PostalCode","AVSData:Street","TaxExempt:Amount","TaxExempt:IsTaxExempt","TaxExempt:TaxExemptNumber",
+                     "IntlAVSData:HouseNumber","IntlAVSData:Street","IntlAVSData:PostalCode","IntlAVSData:City","IntlAVSData:Country"]

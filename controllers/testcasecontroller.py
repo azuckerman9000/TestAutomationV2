@@ -99,21 +99,22 @@ class TCController:
         if "TestData" not in selectedobj.__dict__.keys():
             selectedobj.getRecord(selectedobj.recordid)
         
-        columns = []
-        values = []
+        data = dict.fromkeys(testcasebuilder.getFieldNames(),"")
         for classnode,classdata in selectedobj.TestData.items():
-            if classnode.find("@") == -1:                
+            if classnode.find("@") == -1:
                 for fieldname, value in classdata.items():
-                    if fieldname.find("@") == -1:                        
-                        columns.append(classnode + ":" + fieldname)
-                        values.append(value)
+                    if fieldname.find("@") == -1 and not isinstance(value,dict):
+                        data[fieldname] = value
+                    elif isinstance(value,dict):
+                        for dictfieldname, dictvalue in value.items():
+                            data[fieldname + ":" + dictfieldname] = dictvalue
                         
         data_files = os.path.join(os.path.dirname( __file__ ), '..', 'files')
         path = os.path.abspath(os.path.join(data_files,"AuthData.csv"))
         authdatafile = open(path, 'w')
         rowwriter = csv.writer(authdatafile,delimiter=",",lineterminator='\n')
-        rowwriter.writerow(columns)
-        rowwriter.writerow(values)
+        rowwriter.writerow(list(data.keys()))
+        rowwriter.writerow(list(data.values()))
         authdatafile.close()
                 
 tc = TCController()
