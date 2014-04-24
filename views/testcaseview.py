@@ -8,7 +8,9 @@ class MainView(tk.Frame):
 class InputFrame:
     def __init__(self,frame,title,row,column):
         self.input_frame = tk.Frame(frame,bd=4,relief="groove")
-        self.input_frame.grid(sticky=tk.N+tk.S+tk.E+tk.W,row=row,column=column)        
+        self.input_frame.grid(sticky=tk.N+tk.S+tk.E+tk.W,row=row,column=column)
+        frame.rowconfigure(row,weight=1)
+        frame.columnconfigure(column,weight=1)      
         if title != None:
             self.title = tk.Label(self.input_frame,text=title)
             self.title.grid(row=0,column=0,columnspan=2)
@@ -36,7 +38,8 @@ class InputFrame:
             self.checklabelwidgets[label] = tk.Label(self.input_frame,text=label + ": ")
             self.checklabelwidgets[label].grid(sticky=tk.E,row=rowind,column=0)
             self.checkvars[label] = tk.StringVar()
-            self.checkboxes[label] = tk.Checkbutton(self.input_frame,text=label,variable=self.checkvars[label],onvalue=label,offvalue="")
+            self.checkvars[label].set("False")
+            self.checkboxes[label] = tk.Checkbutton(self.input_frame,text=label,variable=self.checkvars[label],onvalue="True",offvalue="False")
             self.checkboxes[label].grid(sticky=tk.W+tk.E,row=rowind,column=1)
             
     def createButton(self,name):
@@ -56,8 +59,12 @@ class InputFrame:
         self.scroll[name] = tk.Scrollbar(self.input_frame,orient=tk.VERTICAL)
         self.scroll[name].grid(sticky=tk.NE+tk.SE,row=rowind+1,column=1)
         self.listbox[name] = tk.Listbox(self.input_frame,listvariable=self.listvar[name],activestyle="dotbox",yscrollcommand=self.scroll[name].set)
-        self.listbox[name].grid(sticky=tk.W,row=rowind+1,column=0)              
-        self.scroll[name]["command"] = self.listbox[name].yview        
+        self.scroll[name]["command"] = self.listbox[name].yview
+        self.listbox[name].grid(sticky=tk.N+tk.S+tk.E+tk.W,row=rowind+1,column=0)
+        self.input_frame.rowconfigure(rowind+1, weight=1)
+        self.input_frame.columnconfigure(0, weight=1)
+        self.input_frame.columnconfigure(1, weight=1)              
+                
         
     def updateListbox(self,name,selectionlist):        
         temp = ""
@@ -69,31 +76,21 @@ class InputFrame:
         self.listvar[name].set(temp)
         self.listbox[name]["width"] = length+10
         
-    def createCanvas(self,name,disptext):
+    def createCanvas(self,name):
         if "canvas" not in self.__dict__.keys():
             self.canvas = {}
+            self.scroll = {}
         rowind = self.input_frame.grid_size()[1]
-        self.canvas[name] = tk.Canvas(self.input_frame,relief=tk.RIDGE,bd=2)
-        self.canvas[name].create_text(0,0,anchor=tk.NW,text=disptext)
-        self.canvas[name].grid(sticky=tk.W,row=rowind+1,column=0)
-"""            
-     def createLblMenu(self,menufields,menuvalues):       
-        self.menulabelwidgets = {}
-        self.menuvars = {}
-        self.menuitemvars = {}
-        self.menubuttons = {}
-        rowind = self.menu_frame.grid_size()[1]       
-        for i, fieldname in enumerate(menufields):
-            rowind += 1            
-            self.menulabelwidgets[fieldname] = tk.Label(self.menu_frame,text=fieldname + ": ")
-            self.menulabelwidgets[fieldname].grid(sticky=tk.W,row=rowind,column=0)
-            self.menuvars[fieldname] = tk.StringVar()
-            self.menuvars[fieldname].set(fieldname)
-            self.menubuttons[fieldname] = tk.Menubutton(self.menu_frame,relief="raised",textvariable=self.menuvars[fieldname])
-            self.menubuttons[fieldname].grid(sticky=tk.W,row=rowind,column=1)
-            self.menubuttons[fieldname].menu = tk.Menu(self.menubuttons[fieldname])
-            self.menubuttons[fieldname]["menu"] = self.menubuttons[fieldname].menu            
-            self.menuitemvars[fieldname] = tk.StringVar()
-            for value in menuvalues[i]:                
-                self.menubuttons[fieldname].menu.add_checkbutton(label=value,variable=self.menuitemvars[fieldname],onvalue=value,offvalue="",command=self.updateMenuButton)
-"""            
+        self.scroll[name] = tk.Scrollbar(self.input_frame,orient=tk.VERTICAL)
+        self.scroll[name].grid(sticky=tk.NE+tk.SE,row=rowind+1,column=1)
+        self.canvas[name] = tk.Canvas(self.input_frame,relief=tk.RIDGE,bd=2,yscrollcommand=self.scroll[name].set)
+        self.scroll[name]["command"] = self.canvas[name].yview        
+        self.canvas[name].grid(sticky=tk.N+tk.S,row=rowind+1,column=0)
+        self.input_frame.rowconfigure(rowind+1, weight=1)
+        self.input_frame.columnconfigure(0, weight=1)
+        
+    def updateCanvas(self,name,text):
+        for Id in self.canvas["tcdisplay"].find_all():
+            self.canvas["tcdisplay"].delete(Id)
+        self.canvas[name].create_text(0,0,anchor=tk.NW,text=text)
+        self.canvas[name]["scrollregion"] = self.canvas[name].bbox(tk.ALL) 

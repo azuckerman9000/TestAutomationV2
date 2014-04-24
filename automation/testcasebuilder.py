@@ -50,26 +50,16 @@ class TestCase(CWSDataQuery):
         del tc_resp["TestCaseInfo"]
         self.TestData = tc_resp
     
-    def createRecord(self,TenderType,MessageType,Host,IndustryType,Workflow,Environment,CardType,EcommSecInd,Level2Ind,BillPayInd,*cardsecargs):
-        self.Environment = Environment
-        self.MessageType = MessageType
-        self.Host = Host
-        self.Workflow = Workflow
-        self.IndustryType = IndustryType
-        self.TenderType = TenderType
-        self.CardType = CardType
-        self.EcommSecInd = EcommSecInd
-        self.Level2Ind = Level2Ind
-        self.BillPayInd = BillPayInd
-        self.cardsecargs = cardsecargs
-        self.checkExists()
+    def createRecord(self,**kwargs):
+        self.checkExists(**kwargs)
         if self._exists:
             return
         
-        self.RecordObjects = {"Credentials":Credentials(self.Environment,self.MessageType),"Service":Service(self.Host,self.Workflow),"Merchant":Merchant(self.IndustryType,self.Environment,self.MessageType),
-                              "Application":Application(),"Level2Data":Level2Data(self.Level2Ind),"TransactionData":TransactionData(self.TenderType,self.IndustryType,self.BillPayInd),
-                              "CardData":CardData(self.Environment,self.CardType),"CardSecurityData":CardSecurityData(self.TenderType,*self.cardsecargs),
-                              "EcommerceSecurityData":EcommerceSecurityData(self.EcommSecInd),"InterchangeData":InterchangeData(self.BillPayInd)}
+        self.RecordObjects = {"Credentials":Credentials(kwargs["Environment"],kwargs["MessageType"]),"Service":Service(kwargs["Host"],kwargs["Workflow"]),
+                              "Merchant":Merchant(kwargs["IndustryType"],kwargs["Environment"],kwargs["MessageType"]),
+                              "Application":Application(),"Level2Data":Level2Data(kwargs["Level2Data"]),"TransactionData":TransactionData(kwargs["TenderType"],kwargs["IndustryType"],kwargs["BillPayment"]),
+                              "CardData":CardData(kwargs["Environment"],kwargs["CardType"]),"CardSecurityData":CardSecurityData(kwargs["TenderType"],kwargs["AVSData"],kwargs["CVData"]),
+                              "EcommerceSecurityData":EcommerceSecurityData(kwargs["3DSecure"]),"InterchangeData":InterchangeData(kwargs["BillPayment"])}
         
         for classname, classobj in self.RecordObjects.items():
             if not classobj.exists:
@@ -80,6 +70,7 @@ class TestCase(CWSDataQuery):
             if classobj.exists:
                 TestCase[classname] = classobj.recordid
         
+        self.TestCaseInfo = kwargs
         TestCase["TestCaseInfo"] = self.TestCaseInfo
         TestCase["@class"] = "TestCase"
         header = {"content-type":"application/json"}
@@ -87,20 +78,10 @@ class TestCase(CWSDataQuery):
         self._exists = True
         self._recordid = r.text
     
-    def checkExists(self):
-        query = "select from TestCase where"
-        self.TestCaseInfo = {}
-        for key, value in self.__dict__.items():
-            if key not in ["_exists","cardsecargs","TestCaseInfo"]:
-                query += " TestCaseInfo." + key + " = '" + str(value) + "' and"
-                self.TestCaseInfo[key] = str(value)
-        for arg in globalvars.CARDSECARGS:
-            if arg in self.cardsecargs:
-                query += " TestCaseInfo." + arg + " = 'True' and"
-                self.TestCaseInfo[arg] = "True"
-            else:
-                query += " TestCaseInfo." + arg + " = 'False' and"
-                self.TestCaseInfo[arg] = "False"
+    def checkExists(self,**kwargs):
+        query = "select from TestCase where"        
+        for key, value in kwargs.items():            
+            query += " TestCaseInfo." + key + " = '" + str(value) + "' and"                      
         query = query[:-4]
         r1 = requests.get("http://localhost:2480/query/" + globalvars.DBNAME + "/sql/" + query,auth=HTTPBasicAuth('admin','admin'))
         if json.loads(r1.text)["result"] == []:
@@ -140,20 +121,20 @@ class TestCase(CWSDataQuery):
         self._dispStr += "-" + self.TestCaseInfo["Host"].replace(" ","-")
         self._dispStr += "-" + self.TestCaseInfo["IndustryType"]
         self._dispStr += "-" + self.TestCaseInfo["CardType"]
+        if self.TestCaseInfo["TenderType"] == "PINDebit":
+            self._dispStr += "-PINDebit"
         if self.TestCaseInfo["Workflow"] != "None":
             self._dispStr += "-" + self.TestCaseInfo["Workflow"]
-        if self.TestCaseInfo["EcommSecInd"] != "None":
-            self._dispStr += "-" + self.TestCaseInfo["EcommSecInd"]
-        if self.TestCaseInfo["Level2Ind"] != "None":
-            self._dispStr += "-" + "Level2:" + self.TestCaseInfo["Level2Ind"]
-        if self.TestCaseInfo["BillPayInd"] != "None":
-            self._dispStr += "-" + "BillPay:" + self.TestCaseInfo["BillPayInd"]
+        if self.TestCaseInfo["3DSecure"] != "False":
+            self._dispStr += "-" + self.TestCaseInfo["3DSecure"]
+        if self.TestCaseInfo["Level2Data"] != "None":
+            self._dispStr += "-Level2:" + self.TestCaseInfo["Level2Data"]
+        if self.TestCaseInfo["BillPayment"] != "None":
+            self._dispStr += "-BillPay:" + self.TestCaseInfo["BillPayment"]
         if self.TestCaseInfo["CVData"] != "False":
-            self._dispStr += "-" + "CVData"
-        if self.TestCaseInfo["AVSData"] != "False":
-            self._dispStr += "-" + "AVSData"
-        if self.TestCaseInfo["IntlAVSData"] != "False":
-            self._dispStr += "-" + "IntlAVSData"
+            self._dispStr += "-CVData"
+        if self.TestCaseInfo["AVSData"] != "None":
+            self._dispStr += "-" + self.TestCaseInfo["AVSData"]        
         return self._dispStr    
    
 class Credentials(CWSDataQuery):
@@ -267,7 +248,7 @@ class Level2Data(CWSDataQuery):
         self._exists = False         
     
     def getRecord(self,PAN):
-        if self.Level2Ind == None:
+        if self.Level2Ind == "None":
             self._recordid = None
             self._exists = False
             return
@@ -299,7 +280,7 @@ class TransactionData(CWSDataQuery):
     def getRecord(self):
         query = "select from TransactionData where TenderType = '" + self.TenderType + "'"
         query += " and IndustryType = '" + self.IndustryType + "'"        
-        if self.BillPayInd != None:
+        if self.BillPayInd != "None":
             query += " and CustomerPresent = 'BillPayment'"
          
         r1 = requests.get("http://localhost:2480/query/" + globalvars.DBNAME + "/sql/" + query,auth=HTTPBasicAuth('admin','admin'))
@@ -345,22 +326,26 @@ class CardData(CWSDataQuery):
         return self._exists
         
 class CardSecurityData(CWSDataQuery):
-    def __init__(self,TenderType,*cardsecargs):
+    def __init__(self,TenderType,AVSData,CVData):
         self.TenderType = TenderType
-        self.cardsecargs = cardsecargs
+        self.AVSData = AVSData
+        self.CVData = CVData
         self._exists = False 
                 
     def getRecord(self,PAN):
-        if len(self.cardsecargs) == 0:
+        if self.TenderType == "Credit" and self.CVData == "False" and self.AVSData == "None":
             self._recordid = None
             self._exists = False
             return            
         url = "http://localhost:2480/query/" + globalvars.DBNAME + "/sql/select from CardSecurityData where PAN = '" + PAN + "' and "
-        for arg in globalvars.CARDSECARGS:
-            if arg in self.cardsecargs:
-                url += arg + " is not null and "
-            else:
-                url += arg + " is null and "
+        if self.AVSData == "AVSData":
+            url += " AVSData is not null and "
+        else:
+            url += " AVSData is null and "
+        if self.CVData == "True":
+            url += " CVData is not null and "
+        else:
+            url += " CVData is null and "
         if self.TenderType == "PINDebit":
             url += "PIN is not null"
         else:
@@ -392,7 +377,7 @@ class EcommerceSecurityData(CWSDataQuery):
         self._exists = False 
         
     def getRecord(self,PAN):
-        if self.EcommSecInd == None:
+        if self.EcommSecInd == "False":
             self._recordid = None
             self._exists = False
             return
@@ -424,7 +409,7 @@ class InterchangeData(CWSDataQuery):
         self._exists = False 
         
     def getRecord(self):
-        if self.BillPayInd == None:
+        if self.BillPayInd == "None":
             self._recordid = None
             self._exists = False
             return

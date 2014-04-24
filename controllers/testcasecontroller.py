@@ -3,12 +3,14 @@ from automation import testcasebuilder
 from globalvars import globalvars
 import os
 import csv
+import json
 
 class TCController:
     def __init__(self):
         self.view = testcaseview.MainView()
         self.view.master.title("TestCase Builder")
-        self.getTestCases()        
+        self.getTestCases()
+        self.getTestStrings()        
         self.initGUI()
         
     def getTestCases(self):
@@ -18,7 +20,8 @@ class TCController:
             return
         for Id in Idlist:
             self.TestCaseObjs[Id] = testcasebuilder.TestCase()
-            
+    
+    def getTestStrings(self):         
         self.TestCaseString = {}
         for Id, obj in self.TestCaseObjs.items():
             obj.getRecord(Id)
@@ -32,69 +35,66 @@ class TCController:
         self.reqmenuframe.createLblMenu(self.reqmenuinputs,reqmenuvalues)
         
         optmenuinputs = ["Level2Data","BillPayment","AVSData"]
-        optmenuvalues = [globalvars.LEVEL2ARGS,globalvars.BILLPAYARGS,globalvars.AVSARGS]
+        optmenuvalues = [globalvars.LEVEL2ARGS,globalvars.BILLPAYARGS,globalvars.AVSARGS]        
         optcheckinputs = ["3DSecure","CVData"]
         self.optmenuframe = testcaseview.InputFrame(self.view,"Optional Inputs",1,0)
         self.optmenuframe.title["fg"] ="blue"
-        self.optmenuframe.createLblMenu(optmenuinputs,optmenuvalues)        
+        self.optmenuframe.createLblMenu(optmenuinputs,optmenuvalues)
+        for menuvar in self.optmenuframe.menuvars.values():
+            menuvar.set("None")        
         self.optmenuframe.createLblCheckbox(optcheckinputs)
         
         self.buildframe = testcaseview.InputFrame(self.view,None,2,0)
         self.buildframe.createButton("Create Test Case")
         self.buildframe.button["Create Test Case"]["command"] = self.createTestCase
         self.buildframe.createButton("Reset Inputs")
+        self.buildframe.button["Reset Inputs"]["command"] = self.resetInputs
         self.buildframe.createButton("Build Authorize")
         self.buildframe.button["Build Authorize"]["command"] = self.populateDataSource 
         
-        self.testviewframe = testcaseview.InputFrame(self.view,None,0,1)        
-        self.testviewframe.createListbox("soap")
-        self.testviewframe.updateListbox("soap",self.TestCaseString.keys())        
+        self.SOAPviewframe = testcaseview.InputFrame(self.view,None,0,1)        
+        self.SOAPviewframe.createListbox("soap")
+        self.SOAPviewframe.updateListbox("soap",[dispstr for dispstr in self.TestCaseString.keys() if dispstr[:4] == "SOAP"])
+        self.RESTviewframe = testcaseview.InputFrame(self.view,None,0,2)        
+        self.RESTviewframe.createListbox("rest")
+        self.RESTviewframe.updateListbox("rest",[dispstr for dispstr in self.TestCaseString.keys() if dispstr[:4] == "REST"])
+        
+        self.SOAPviewframe.listbox["soap"].bind("<ButtonRelease>",self.showTestCase)
+        self.RESTviewframe.listbox["rest"].bind("<ButtonRelease>",self.showTestCase)
+        
+        self.displayframe = testcaseview.InputFrame(self.view,None,1,1)
+        self.displayframe.createCanvas("tcdisplay")
+        self.displayframe.input_frame.grid(columnspan=2)
+        
+    def showTestCase(self,event):
+        dispstr = event.widget.get(event.widget.curselection()[0])
+        tcobj = self.TestCaseObjs[self.TestCaseString[dispstr]]
+        self.displayframe.updateCanvas("tcdisplay",json.dumps(tcobj.TestData,sort_keys=True, indent=2, separators =(',',':')))
         
     def createTestCase(self):
         for value in self.reqmenuframe.menuvars.values():
             if value.get() == "":
                 print("Must Enter All Required Fields")
                 return
-        
-        EcommSecInd = self.optmenuframe.checkvars["3DSecure"].get()
-        if EcommSecInd == "":
-            EcommSecInd = None
-        Level2Ind = self.optmenuframe.menuvars["Level2Data"].get()
-        if Level2Ind == "":
-            Level2Ind = None
-        BillPayInd = self.optmenuframe.menuvars["BillPayment"].get()
-        if BillPayInd == "":
-            BillPayInd = None
-        args = []
-        if self.optmenuframe.checkvars["CVData"].get() != "":
-            args.append(self.optmenuframe.checkvars["CVData"].get())        
-        if self.optmenuframe.menuvars["AVSData"].get() != "":
-            args.append(self.optmenuframe.checkvars["AVSData"].get())
+        kwparams = dict([(key,val.get())for key, val in self.reqmenuframe.menuvars.items()] +
+                        [(key,val.get())for key, val in self.optmenuframe.menuvars.items()] +
+                        [(key,val.get())for key, val in self.optmenuframe.checkvars.items()])
         
         newtc = testcasebuilder.TestCase()
-        newtc.createRecord(self.reqmenuframe.menuvars[self.reqmenuinputs[0]].get(),
-                                              self.reqmenuframe.menuvars[self.reqmenuinputs[1]].get(),
-                                              self.reqmenuframe.menuvars[self.reqmenuinputs[2]].get(),
-                                              self.reqmenuframe.menuvars[self.reqmenuinputs[3]].get(),
-                                              self.reqmenuframe.menuvars[self.reqmenuinputs[4]].get(),
-                                              self.reqmenuframe.menuvars[self.reqmenuinputs[5]].get(),
-                                              self.reqmenuframe.menuvars[self.reqmenuinputs[6]].get(),
-                                              EcommSecInd,
-                                              Level2Ind,
-                                              BillPayInd,
-                                              *args)        
+        newtc.createRecord(**kwparams)        
         
         if newtc.recordid in self.TestCaseObjs.keys():
             print("Test Case Already Exists")
             return
         self.TestCaseObjs[newtc.recordid] = newtc
-        self.TestCaseString[newtc.dispStr] = newtc.recordid
-        self.testviewframe.updateListbox("soap",self.TestCaseString.keys())
+        self.TestCaseString[newtc.dispStr] = newtc.recordid        
+        self.SOAPviewframe.updateListbox("soap", [dispstr for dispstr in self.TestCaseString.keys() if dispstr[:4] == "SOAP"])
+        self.RESTviewframe.updateListbox("rest", [dispstr for dispstr in self.TestCaseString.keys() if dispstr[:4] == "REST"])
     
-    def populateDataSource(self):
-        if self.testviewframe.listbox["soap"].curselection() == ():
+    def populateDataSource(self):        
+        if self.view.focus_get().curselection() == ():
             return
-        dispstr = self.testviewframe.listbox["soap"].get(self.testviewframe.listbox["soap"].curselection()[0])
+        dispstr = self.view.focus_get().get(self.view.focus_get().curselection()[0])
         selectedobj = self.TestCaseObjs[self.TestCaseString[dispstr]]
         if "TestData" not in selectedobj.__dict__.keys():
             selectedobj.getRecord(selectedobj.recordid)
@@ -116,6 +116,15 @@ class TCController:
         rowwriter.writerow(list(data.keys()))
         rowwriter.writerow(list(data.values()))
         authdatafile.close()
+        
+    def resetInputs(self):
+        for var in self.reqmenuframe.menuvars.values():
+            var.set("")
+        for var in self.optmenuframe.menuvars.values():
+            var.set("None")
+        for var in self.optmenuframe.checkvars.values():
+            var.set("False")
+        
                 
 tc = TCController()
 tc.view.mainloop()
