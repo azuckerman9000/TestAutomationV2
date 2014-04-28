@@ -196,8 +196,8 @@ class Merchant(CWSDataQuery):
         self.MessageType = MessageType
         self._exists = False         
     
-    def getRecord(self,ServiceId):
-        url = "http://localhost:2480/query/" + globalvars.DBNAME + "/sql/select from Merchant where IndustryType = '" + self.IndustryType + "' and Environment = '" + self.Environment + "' and ServiceId = '" + ServiceId + "' and MessageType = '" + self.MessageType + "'"
+    def getRecord(self,ServiceId):        
+        url = "http://localhost:2480/query/" + globalvars.DBNAME + "/sql/select from Merchant where IndustryType = '" + self.IndustryType + "' and Environment = '" + self.Environment + "' and ServiceId = '" + ServiceId + "' and MessageType = '" + self.MessageType + "'"        
         r1 = requests.get(url, auth=HTTPBasicAuth('admin','admin'))
         merch_resp = json.loads(r1.text)
         self._recordid = merch_resp["result"][0]["@rid"]
@@ -435,16 +435,26 @@ class InterchangeData(CWSDataQuery):
     def exists(self):
         return self._exists
             
-def getClassRecordIds(classname):
-    url = "http://localhost:2480/query/" + globalvars.DBNAME + "/sql/select @rid from " + classname
+def getClassRecordIds(classname,withdata=False):
+    url = "http://localhost:2480/query/" + globalvars.DBNAME + "/sql/select from " + classname + "/100"
     r1 = requests.get(url, auth=HTTPBasicAuth('admin','admin'))
-    rids = []
     queryresults = json.loads(r1.text)["result"]
-    if queryresults == []:
-        return rids
-    for result in queryresults:
-        rids.append(result["rid"])
-    return rids
+    if withdata:
+        data = {}
+        try:
+            for result in queryresults:
+                data[result["@rid"]] = result
+        except (IndexError, KeyError):
+            pass
+        return data
+    else:
+        data = []
+        try:
+            for result in queryresults:
+                data.append(result["@rid"])
+        except (IndexError, KeyError):
+            pass
+        return data
 
 def getFieldNames():
         fieldnames = []
@@ -453,7 +463,7 @@ def getFieldNames():
             r = requests.get(url, auth=HTTPBasicAuth('admin','admin'))
             properties = json.loads(r.text)["properties"]
             for prop in properties:
-                if prop["type"] == "STRING":
+                if prop["type"] == "STRING" or prop["type"] == "INTEGER":
                     fieldnames.append(prop["name"])
             fieldnames += globalvars.EMBEDDEDMAPFIELDS
         return list(set(fieldnames))

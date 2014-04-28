@@ -46,19 +46,18 @@ class TCController:
         
         self.buildframe = testcaseview.InputFrame(self.view,None,2,0)
         self.buildframe.createButton("Create Test Case")
-        self.buildframe.button["Create Test Case"]["command"] = self.createTestCase
-        self.buildframe.createButton("Reset Inputs")
-        self.buildframe.button["Reset Inputs"]["command"] = self.resetInputs
+        self.buildframe.button["Create Test Case"]["command"] = self.createTestCase        
         self.buildframe.createButton("Build Authorize")
-        self.buildframe.button["Build Authorize"]["command"] = self.populateDataSource 
+        self.buildframe.button["Build Authorize"]["command"] = self.populateDataSource
+        self.buildframe.createButton("Reset Inputs")
+        self.buildframe.button["Reset Inputs"]["command"] = self.resetInputs 
         
         self.SOAPviewframe = testcaseview.InputFrame(self.view,None,0,1)        
         self.SOAPviewframe.createListbox("soap")
         self.SOAPviewframe.updateListbox("soap",[dispstr for dispstr in self.TestCaseString.keys() if dispstr[:4] == "SOAP"])
         self.RESTviewframe = testcaseview.InputFrame(self.view,None,0,2)        
         self.RESTviewframe.createListbox("rest")
-        self.RESTviewframe.updateListbox("rest",[dispstr for dispstr in self.TestCaseString.keys() if dispstr[:4] == "REST"])
-        
+        self.RESTviewframe.updateListbox("rest",[dispstr for dispstr in self.TestCaseString.keys() if dispstr[:4] == "REST"])        
         self.SOAPviewframe.listbox["soap"].bind("<ButtonRelease>",self.showTestCase)
         self.RESTviewframe.listbox["rest"].bind("<ButtonRelease>",self.showTestCase)
         
@@ -66,10 +65,32 @@ class TCController:
         self.displayframe.createCanvas("tcdisplay")
         self.displayframe.input_frame.grid(columnspan=2)
         
+        self.savemerchframe = testcaseview.MerchantFrame(self.view,"Save Merchant Profile",0,3)
+        self.savemerchframe.title["fg"] = "blue"        
+        self.merchdata = testcasebuilder.getClassRecordIds("Merchant",True)
+        self.merchref = {record["MerchantProfileId"]:rid for rid, record in  self.merchdata.items()}        
+        for i, env in enumerate(globalvars.ENVIRONMENTS):
+            self.savemerchframe.createButton(env,1,i)            
+            self.savemerchframe.button[env]["command"] = lambda button=env : self.showProfilesByEnv(button)
+        self.savemerchframe.createListbox("profiles",2,0)             
+                
+        
     def showTestCase(self,event):
         dispstr = event.widget.get(event.widget.curselection()[0])
         tcobj = self.TestCaseObjs[self.TestCaseString[dispstr]]
         self.displayframe.updateCanvas("tcdisplay",json.dumps(tcobj.TestData,sort_keys=True, indent=2, separators =(',',':')))
+        
+    def showProfilesByEnv(self,button):
+        envmpids = [record["MerchantProfileId"] for record in self.merchdata.values() if record["Environment"] == button]
+        self.savemerchframe.updateListbox("profiles",sorted(envmpids))
+        self.savemerchframe.listbox["profiles"].bind("<ButtonRelease>", self.displayMerchantData)
+                                          
+    def displayMerchantData(self,event):        
+        mpid = self.savemerchframe.listbox["profiles"].get(event.widget.curselection()[0])
+        data = self.merchdata[self.merchref[mpid]]
+        if "canvas" not in self.savemerchframe.__dict__.keys():
+            self.savemerchframe.createCanvas("profiledisplay")
+        self.savemerchframe.updateCanvas("profiledisplay",json.dumps(data,sort_keys=True, indent=2, separators =(',',':')))        
         
     def createTestCase(self):
         for value in self.reqmenuframe.menuvars.values():

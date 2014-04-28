@@ -90,7 +90,67 @@ class InputFrame:
         self.input_frame.columnconfigure(0, weight=1)
         
     def updateCanvas(self,name,text):
-        for Id in self.canvas["tcdisplay"].find_all():
-            self.canvas["tcdisplay"].delete(Id)
+        for Id in self.canvas[name].find_all():
+            self.canvas[name].delete(Id)
+        self.canvas[name].create_text(0,0,anchor=tk.NW,text=text)
+        self.canvas[name]["scrollregion"] = self.canvas[name].bbox(tk.ALL)
+
+class MerchantFrame:
+    def __init__(self,frame,title,row,column):
+        self.merch_frame = tk.Frame(frame,bd=4,relief="groove")
+        self.merch_frame.grid(sticky=tk.N+tk.S+tk.E+tk.W,row=row,column=column)
+        frame.rowconfigure(row,weight=1)
+        frame.columnconfigure(column,weight=1)      
+        if title != None:
+            self.title = tk.Label(self.merch_frame,text=title)
+            self.title.grid(row=0,column=0,columnspan=3)
+            
+    def createButton(self,name,row,column):
+        if "button" not in self.__dict__.keys():
+            self.button = {}                       
+        self.button[name] = tk.Button(self.merch_frame,text=name)
+        self.button[name].grid(sticky=tk.W+tk.E,row=row,column=column)
+        
+    def createListbox(self,name,row,column):        
+        if "listbox" not in self.__dict__.keys():
+            self.listvar = {}
+            self.scroll = {}
+            self.listbox = {}                
+        self.listvar[name] = tk.StringVar()        
+        self.scroll[name] = tk.Scrollbar(self.merch_frame,orient=tk.VERTICAL)
+        self.scroll[name].grid(sticky=tk.NE+tk.SE,row=row,column=column+3)
+        self.listbox[name] = tk.Listbox(self.merch_frame,listvariable=self.listvar[name],activestyle="dotbox",yscrollcommand=self.scroll[name].set)
+        self.scroll[name]["command"] = self.listbox[name].yview
+        self.listbox[name].grid(sticky=tk.N+tk.S+tk.E+tk.W,row=row,column=column,columnspan=3)
+        self.merch_frame.rowconfigure(row, weight=1)
+        self.merch_frame.columnconfigure(column, weight=1)
+        self.merch_frame.columnconfigure(column+1, weight=1)
+        self.merch_frame.columnconfigure(column+2, weight=1)               
+        
+    def updateListbox(self,name,selectionlist):        
+        temp = ""
+        length = 20
+        for item in sorted(selectionlist):
+            temp += item + " "
+            if len(item) > length:
+                length = len(item)            
+        self.listvar[name].set(temp)
+        self.listbox[name]["width"] = length+10
+        
+    def createCanvas(self,name):
+        if "canvas" not in self.__dict__.keys():
+            self.canvas = {}
+            self.scroll = {}
+        colind = self.merch_frame.grid_size()[0]
+        rowind = self.merch_frame.grid_size()[1]
+        self.scroll[name] = tk.Scrollbar(self.merch_frame,orient=tk.VERTICAL)
+        self.scroll[name].grid(sticky=tk.NE+tk.SE,row=0,column=colind+2,rowspan=rowind)
+        self.canvas[name] = tk.Canvas(self.merch_frame,relief=tk.RIDGE,bd=2,yscrollcommand=self.scroll[name].set)
+        self.scroll[name]["command"] = self.canvas[name].yview        
+        self.canvas[name].grid(sticky=tk.N+tk.S,row=0,column=colind+1,rowspan=rowind)
+        
+    def updateCanvas(self,name,text):
+        for Id in self.canvas[name].find_all():
+            self.canvas[name].delete(Id)
         self.canvas[name].create_text(0,0,anchor=tk.NW,text=text)
         self.canvas[name]["scrollregion"] = self.canvas[name].bbox(tk.ALL) 
