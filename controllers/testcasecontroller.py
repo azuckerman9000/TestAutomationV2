@@ -102,7 +102,10 @@ class TCController:
                         [(key,val.get())for key, val in self.optmenuframe.checkvars.items()])
         
         newtc = testcasebuilder.TestCase()
-        newtc.createRecord(**kwparams)        
+        try:
+            newtc.createRecord(**kwparams)
+        except IndexError:
+            return        
         
         if newtc.recordid in self.TestCaseObjs.keys():
             print("Test Case Already Exists")

@@ -3,6 +3,7 @@ import requests
 import json
 from globalvars import globalvars
 from requests.auth import HTTPBasicAuth
+import sys
 
 class CWSDataQuery(object):
     __metaclass__ = abc.ABCMeta    
@@ -63,7 +64,11 @@ class TestCase(CWSDataQuery):
         
         for classname, classobj in self.RecordObjects.items():
             if not classobj.exists:
-                self.getDependentRecord(classname,classobj)
+                try:
+                    self.getDependentRecord(classname,classobj)
+                except IndexError:
+                    print("Exiting Create TestCase...")
+                    raise
         
         TestCase = {}        
         for classname, classobj in self.RecordObjects.items():
@@ -93,13 +98,17 @@ class TestCase(CWSDataQuery):
     
     def getDependentRecord(self,classname,classobj):
         DepClassName = globalvars.CLASS_DEPENDENCIES[classname] 
-        if DepClassName != None:
-            DepClassObj = self.RecordObjects[globalvars.CLASS_DEPENDENCIES[classname]]
-            if not DepClassObj.exists:
-                self.getDependentRecord(DepClassName,DepClassObj)
-            classobj.getRecord(DepClassObj.classkey)
-        else:
-            classobj.getRecord()                      
+        try:
+            if DepClassName != None:
+                DepClassObj = self.RecordObjects[globalvars.CLASS_DEPENDENCIES[classname]]
+                if not DepClassObj.exists:
+                    self.getDependentRecord(DepClassName,DepClassObj)            
+                classobj.getRecord(DepClassObj.classkey)            
+            else:
+                classobj.getRecord()
+        except IndexError:
+            print("No record exists of type: " + classname + " for given inputs.")
+            raise                      
             
     @property    
     def recordid(self):
@@ -302,7 +311,7 @@ class TransactionData(CWSDataQuery):
 class CardData(CWSDataQuery):
     def __init__(self,Environment,CardType):
         self.CardType = CardType
-        self.Environment = Environment
+        self.Environment = Environment        
         self._exists = False 
          
     def getRecord(self):
