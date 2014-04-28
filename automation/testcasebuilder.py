@@ -48,7 +48,11 @@ class TestCase(CWSDataQuery):
         self._recordid = tc_resp["@rid"]
         self._exists = True
         self.TestCaseInfo = tc_resp["TestCaseInfo"]
-        del tc_resp["TestCaseInfo"]
+        if tc_resp["TestCaseInfo"]["IndustryType"] in ["Retail","Resturant"]:
+            del tc_resp["CardData"]["PAN"]
+        else:
+            del tc_resp["CardData"]["Track2Data"]
+        del tc_resp["TestCaseInfo"]        
         self.TestData = tc_resp
     
     def createRecord(self,**kwargs):
