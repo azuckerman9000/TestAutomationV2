@@ -48,7 +48,7 @@ class TestCase(CWSDataQuery):
         self._recordid = tc_resp["@rid"]
         self._exists = True
         self.TestCaseInfo = tc_resp["TestCaseInfo"]
-        if tc_resp["TestCaseInfo"]["IndustryType"] in ["Retail","Resturant"]:
+        if tc_resp["TestCaseInfo"]["IndustryType"] in ["Retail","Restaurant"]:
             del tc_resp["CardData"]["PAN"]
         else:
             del tc_resp["CardData"]["Track2Data"]
@@ -159,9 +159,9 @@ class Credentials(CWSDataQuery):
     def getRecord(self):
         url = "http://localhost:2480/query/" + globalvars.DBNAME + "/sql/select from Credentials where Environment = '" + self.Environment + "' and MessageType = '" + self.MessageType + "'"
         r1 = requests.get(url, auth=HTTPBasicAuth('admin','admin'))
-        cred_resp = json.loads(r1.text)
-        self._recordid = cred_resp["result"][0]["@rid"]
-        self._ServiceKey = cred_resp["result"][0]["ServiceKey"]
+        self.resp = json.loads(r1.text)
+        self._recordid = self.resp["result"][0]["@rid"]
+        self._ServiceKey = self.resp["result"][0]["ServiceKey"]
         self._exists = True
         
     @property    

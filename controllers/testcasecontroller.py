@@ -5,10 +5,16 @@ import os
 import csv
 import json
 
-class TCController:
+class MainController:
     def __init__(self):
         self.view = testcaseview.MainView()
         self.view.master.title("TestCase Builder")
+        self.build = BuildController(self.view)
+        self.savemerch = SaveMerchController(self.view) 
+       
+class BuildController:
+    def __init__(self,mainview):
+        self.view = mainview
         self.getTestCases()
         self.getTestStrings()        
         self.initGUI()
@@ -65,32 +71,12 @@ class TCController:
         self.displayframe.createCanvas("tcdisplay")
         self.displayframe.input_frame.grid(columnspan=2)
         
-        self.savemerchframe = testcaseview.MerchantFrame(self.view,"Save Merchant Profile",0,3)
-        self.savemerchframe.title["fg"] = "blue"        
-        self.merchdata = testcasebuilder.getClassRecordIds("Merchant",True)
-        self.merchref = {record["MerchantProfileId"]:rid for rid, record in  self.merchdata.items()}        
-        for i, env in enumerate(globalvars.ENVIRONMENTS):
-            self.savemerchframe.createButton(env,1,i)            
-            self.savemerchframe.button[env]["command"] = lambda button=env : self.showProfilesByEnv(button)
-        self.savemerchframe.createListbox("profiles",2,0)             
-                
-        
     def showTestCase(self,event):
         dispstr = event.widget.get(event.widget.curselection()[0])
         tcobj = self.TestCaseObjs[self.TestCaseString[dispstr]]
+        if "TestData" not in tcobj.__dict__.keys():
+            tcobj.getRecord(tcobj.recordid)
         self.displayframe.updateCanvas("tcdisplay",json.dumps(tcobj.TestData,sort_keys=True, indent=2, separators =(',',':')))
-        
-    def showProfilesByEnv(self,button):
-        envmpids = [record["MerchantProfileId"] for record in self.merchdata.values() if record["Environment"] == button]
-        self.savemerchframe.updateListbox("profiles",sorted(envmpids))
-        self.savemerchframe.listbox["profiles"].bind("<ButtonRelease>", self.displayMerchantData)
-                                          
-    def displayMerchantData(self,event):        
-        mpid = self.savemerchframe.listbox["profiles"].get(event.widget.curselection()[0])
-        data = self.merchdata[self.merchref[mpid]]
-        if "canvas" not in self.savemerchframe.__dict__.keys():
-            self.savemerchframe.createCanvas("profiledisplay")
-        self.savemerchframe.updateCanvas("profiledisplay",json.dumps(data,sort_keys=True, indent=2, separators =(',',':')))        
         
     def createTestCase(self):
         for value in self.reqmenuframe.menuvars.values():
@@ -115,10 +101,12 @@ class TCController:
         self.SOAPviewframe.updateListbox("soap", [dispstr for dispstr in self.TestCaseString.keys() if dispstr[:4] == "SOAP"])
         self.RESTviewframe.updateListbox("rest", [dispstr for dispstr in self.TestCaseString.keys() if dispstr[:4] == "REST"])
     
-    def populateDataSource(self):        
-        if self.view.focus_get().curselection() == ():
+    def populateDataSource(self):       
+        try:
+            dispstr = self.view.focus_get().get(self.view.focus_get().curselection()[0])
+        except AttributeError:
+            print("No Test Case Selected.")
             return
-        dispstr = self.view.focus_get().get(self.view.focus_get().curselection()[0])
         selectedobj = self.TestCaseObjs[self.TestCaseString[dispstr]]
         if "TestData" not in selectedobj.__dict__.keys():
             selectedobj.getRecord(selectedobj.recordid)
@@ -140,6 +128,7 @@ class TCController:
         rowwriter.writerow(list(data.keys()))
         rowwriter.writerow(list(data.values()))
         authdatafile.close()
+        print("Authorize CSV Populated.")
         
     def resetInputs(self):
         for var in self.reqmenuframe.menuvars.values():
@@ -148,7 +137,53 @@ class TCController:
             var.set("None")
         for var in self.optmenuframe.checkvars.values():
             var.set("False")
+
+class SaveMerchController:
+    def __init__(self,mainview):
+        self.view = mainview                
+        self.initGUI()
         
+    def initGUI(self):
+        self.savemerchframe = testcaseview.MerchantFrame(self.view,"Save Merchant Profile",0,3)
+        self.savemerchframe.title["fg"] = "blue"        
+        self.merchdata = testcasebuilder.getClassRecordIds("Merchant",True)
+        self.merchref = {record["MerchantProfileId"]:rid for rid, record in  self.merchdata.items()}        
+        for i, env in enumerate(globalvars.ENVIRONMENTS):
+            self.savemerchframe.createButton(env,1,i)            
+            self.savemerchframe.button[env]["command"] = lambda button=env : self.showProfilesByEnv(button)
+        self.savemerchframe.createListbox("profiles",2,0)
+        self.savemerchframe.createButton("SaveMerchantProfile",3,0)
+        self.savemerchframe.button["SaveMerchantProfile"].grid(columnspan=3)
+        
+    def showProfilesByEnv(self,button):
+        envmpids = [record["MerchantProfileId"] for record in self.merchdata.values() if record["Environment"] == button]
+        self.savemerchframe.updateListbox("profiles",sorted(envmpids))
+        self.savemerchframe.listbox["profiles"].bind("<ButtonRelease>", self.displayMerchantData)
+                                          
+    def displayMerchantData(self,event):        
+        mpid = self.savemerchframe.listbox["profiles"].get(event.widget.curselection()[0])
+        data = self.merchdata[self.merchref[mpid]]
+        if "canvas" not in self.savemerchframe.__dict__.keys():
+            self.savemerchframe.createCanvas("profiledisplay")
+        self.savemerchframe.updateCanvas("profiledisplay",json.dumps(data,sort_keys=True, indent=2, separators =(',',':')))
+        self.savemerchframe.button["SaveMerchantProfile"]["command"] = lambda : self.populateDataSource(data)
+        
+    def populateDataSource(self,merchdata):
+        data = {}
+        for key, val in merchdata.items():
+            if key.find("@") == -1:
+                data[key] = val
+        cred = testcasebuilder.Credentials(merchdata["Environment"],merchdata["MessageType"])
+        cred.getRecord()
+        data["IdentityToken"] = cred.resp["result"][0]["IdentityToken"]
+        data_files = os.path.join(os.path.dirname( __file__ ), '..', 'files')
+        path = os.path.abspath(os.path.join(data_files,"MerchantData.csv"))
+        merchdatafile = open(path, 'w')
+        rowwriter = csv.writer(merchdatafile,delimiter=",",lineterminator='\n')
+        rowwriter.writerow(list(data.keys()))
+        rowwriter.writerow(list(data.values()))
+        merchdatafile.close()
+        print("Merchant CSV Populated.")
                 
-tc = TCController()
+tc = MainController()
 tc.view.mainloop()
