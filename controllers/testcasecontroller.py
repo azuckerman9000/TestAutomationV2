@@ -1,5 +1,5 @@
 from views import testcaseview
-from automation import testcasebuilder
+from automation import testcasebuilder, restjsonauthorize
 from globalvars import globalvars
 import os
 import csv
@@ -120,7 +120,9 @@ class BuildController:
                     elif isinstance(value,dict):
                         for dictfieldname, dictvalue in value.items():
                             data[fieldname + ":" + dictfieldname] = dictvalue
-                        
+        if dispstr[:4] == "REST":
+            restjsonauthorize.RestJsonRequest(data)
+            print("Json Request Built")                          
         data_files = os.path.join(os.path.dirname( __file__ ), '..', 'files')
         path = os.path.abspath(os.path.join(data_files,"AuthData.csv"))
         authdatafile = open(path, 'w')

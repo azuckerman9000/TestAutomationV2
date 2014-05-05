@@ -69,5 +69,5 @@ CLASS_DEPENDENCIES = {"Credentials":None,
                       "InterchangeData":None}
 
 global EMBEDDEDMAPFIELDS
-EMBEDDEDMAPFIELDS = ["AVSData:PostalCode","AVSData:Street","TaxExempt:Amount","TaxExempt:IsTaxExempt","TaxExempt:TaxExemptNumber",
+EMBEDDEDMAPFIELDS = ["AVSData:PostalCode","AVSData:Street","Tax:Amount","TaxExempt:IsTaxExempt","TaxExempt:TaxExemptNumber",
                      "IntlAVSData:HouseNumber","IntlAVSData:Street","IntlAVSData:PostalCode","IntlAVSData:City","IntlAVSData:Country"]

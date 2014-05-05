@@ -1,0 +1,114 @@
+{
+	"$type": "AuthorizeTransaction,http://schemas.evosnap.com/CWS/v2.0/Transactions/Rest",
+	"ApplicationProfileId": "",
+	"MerchantProfileId": "",
+	"Transaction": {
+		"$type": "BankcardTransactionPro,http://schemas.evosnap.com/CWS/v2.0/Transactions/Bankcard/Pro",
+		"CustomerData": {
+			"BillingData":null,
+			"CustomerId":null,
+			"CustomerTaxId":null,
+			"ShippingData": {
+				"Name": {
+					"Title":"Mr",
+					"First":"John",
+					"Middle":"A",
+					"Last":"Doe",
+					"Suffix":null
+					},
+				"Address": {
+					"Street1":"1553 Platte St",
+					"Street2": null,
+					"City":"Denver",
+					"StateProvince":"CO",
+					"PostalCode":"80202",
+					"County":"Denver",
+					"CountryCode":"USA"
+					},
+				"BusinessName":null,
+				"Phone":null,
+				"Fax":null,
+				"Email":null
+				}
+			},			
+			"ReportingData": null,
+			"Addendum": null,
+			"ApplicationConfigurationData": null,
+			"TenderData": {
+				"PaymentAccountDataToken":null,
+				"SecurePaymentAccountData":null,
+				"EncryptionKeyId":null,
+				"SwipeStatus":null,
+				"DeviceSerialNumber":null,
+				"CardData": {
+					"CardType": "",
+					"CardholderName": "John Doe",
+					"PAN":"",
+					"Expire":"",
+					"Track2Data": ""
+				},
+				"CardSecurityData": {
+					"AVSData": {
+						"CardholderName":null,
+						"AVSData:Street":"",
+						"City":null,
+						"StateProvince":null,
+						"AVSData:PostalCode":"",
+						"Phone":null,				
+						"Email":null
+						},
+					"IntlAVSData": {						
+						"IntlAVSData:Street":"",
+						"IntlAVSData:City":"",						
+						"IntlAVSData:PostalCode":"",
+						"IntlAVSData:HouseNumber":"",				
+						"IntlAVSData:Country":""
+						},
+					"CVDataProvided":"NotSet",
+					"CVData":"",
+					"KeySerialNumber":"",
+					"PIN":"",
+					"IdentificationInformation":null
+					},
+				"EcommerceSecurityData": {
+					"TokenData":"",
+					"TokenIndicator":"",
+					"XID":""
+					}
+			},
+			"TransactionData": {
+				"Amount": "",
+				"CurrencyCode": "USD",
+				"TransactionDateTime": "2013-04-03T13:50:16",
+				"Reference": "jdhfjd",
+				"AccountType":"NotSet",
+				"CashBackAmount":"",
+				"CustomerPresent":"",
+				"EmployeeId": "",
+				"EntryMode": "",
+				"OrderNumber": "5543",
+				"TipAmount":"",
+				"TransactionCode": "Override",
+				"Level2Data": {
+					"BaseAmount":"",
+					"CustomerCode":"",
+					"OrderNumber":"",
+					"TaxExempt": {
+						"TaxExempt:IsTaxExempt":"",
+						"TaxExempt:TaxExemptNumber":""
+						},
+					"Tax": {
+						"Tax:Amount":""
+						}
+					}
+				},
+				"InterchangeData": {
+					"BillPayment":"",
+					"ExistingDebt":"",
+					"TotalNumberOfInstallments":"",
+					"CurrentInstallmentNumber":""
+					}
+						
+			}
+}
+	

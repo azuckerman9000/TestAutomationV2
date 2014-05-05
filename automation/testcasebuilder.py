@@ -3,7 +3,6 @@ import requests
 import json
 from globalvars import globalvars
 from requests.auth import HTTPBasicAuth
-import sys
 
 class CWSDataQuery(object):
     __metaclass__ = abc.ABCMeta    
@@ -210,7 +209,7 @@ class Merchant(CWSDataQuery):
         self._exists = False         
     
     def getRecord(self,ServiceId):        
-        url = "http://localhost:2480/query/" + globalvars.DBNAME + "/sql/select from Merchant where IndustryType = '" + self.IndustryType + "' and Environment = '" + self.Environment + "' and ServiceId = '" + ServiceId + "' and MessageType = '" + self.MessageType + "'"        
+        url = "http://localhost:2480/query/" + globalvars.DBNAME + "/sql/select from Merchant where IndustryType = '" + self.IndustryType + "' and Environment = '" + self.Environment + "' and ServiceId = '" + ServiceId + "' and MessageType = '" + self.MessageType + "'/100"        
         r1 = requests.get(url, auth=HTTPBasicAuth('admin','admin'))
         merch_resp = json.loads(r1.text)
         self._recordid = merch_resp["result"][0]["@rid"]
