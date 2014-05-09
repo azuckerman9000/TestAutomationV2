@@ -12,7 +12,7 @@ global MESSAGETYPES
 MESSAGETYPES = ["SOAP","REST"]
 
 global HOSTNAMES
-HOSTNAMES = ["EVO HostCap TestHost","EVO TermCap TestHost","EVO HostCap Sandbox","EVO TermCap Sandbox","EVO TermCap AutoResponder","EVO TermCap TPS","EVO HostCap TPS","EVOIntl HostCap Sandbox"]
+HOSTNAMES = ["EVO HostCap TestHost","EVO TermCap TestHost","EVO HostCap Sandbox","EVO TermCap Sandbox","EVO TermCap AutoResponder","EVO TermCap TPS","EVO HostCap TPS","EVOIntl HostCap Sandbox","EVO TermCap Prod-AutoResponder"]
 
 global INDUSTRYTYPES
 INDUSTRYTYPES = ["Retail","Restaurant","MOTO","Ecommerce"]

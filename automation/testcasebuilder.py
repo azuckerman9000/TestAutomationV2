@@ -49,6 +49,7 @@ class TestCase(CWSDataQuery):
         self.TestCaseInfo = tc_resp["TestCaseInfo"]
         if tc_resp["TestCaseInfo"]["IndustryType"] in ["Retail","Restaurant"]:
             del tc_resp["CardData"]["PAN"]
+            del tc_resp["CardData"]["Expire"]
         else:
             del tc_resp["CardData"]["Track2Data"]
         del tc_resp["TestCaseInfo"]        
@@ -350,10 +351,10 @@ class CardSecurityData(CWSDataQuery):
             self._exists = False
             return            
         url = "http://localhost:2480/query/" + globalvars.DBNAME + "/sql/select from CardSecurityData where PAN = '" + PAN + "' and "
-        if self.AVSData == "AVSData":
-            url += " AVSData is not null and "
+        if self.AVSData != "None":
+            url += self.AVSData + " is not null and "
         else:
-            url += " AVSData is null and "
+            url += self.AVSData + "  is null and "
         if self.CVData == "True":
             url += " CVData is not null and "
         else:

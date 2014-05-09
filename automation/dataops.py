@@ -89,7 +89,7 @@ class Database:
         r = requests.get(clusturl, auth=HTTPBasicAuth('admin','admin'))
         for record in json.loads(r.text)["result"]:
             if "ServiceKeys" in record.keys():
-                if set(globalvars.SERVICE_CRED_RELATIONS[record["ServiceId"]]) & set(record["ServiceKeys"]) != set(record["ServiceKeys"]):
+                if set(globalvars.SERVICE_CRED_RELATIONS[record["ServiceId"]]) & set(record["ServiceKeys"]) != set(record["ServiceKeys"]) or set(globalvars.SERVICE_CRED_RELATIONS[record["ServiceId"]]) & set(record["ServiceKeys"]) != set(globalvars.SERVICE_CRED_RELATIONS[record["ServiceId"]]):
                     record["ServiceKeys"] = globalvars.SERVICE_CRED_RELATIONS[record["ServiceId"]]
                     r2 = requests.put(docurl + record["@rid"][1:], params=param, headers=headers, data=json.dumps(record), auth=HTTPBasicAuth('admin','admin'))
                     print(r2.text)
@@ -97,5 +97,15 @@ class Database:
                 record["ServiceKeys"] = globalvars.SERVICE_CRED_RELATIONS[record["ServiceId"]]
                 r2 = requests.put(docurl + record["@rid"][1:], params=param, headers=headers, data=json.dumps(record), auth=HTTPBasicAuth('admin','admin'))
                 print(r2.text)
+                
+def getCluster(classname):
+    clusturl = "http://localhost:2480/cluster/" + globalvars.DBNAME + "/" + classname + "/100"
+    r = requests.get(clusturl,auth=HTTPBasicAuth('admin','admin'))
+    return json.loads(r.text)
+
+def getRecord(rid):
+    docurl = "http://localhost:2480/document/" + globalvars.DBNAME + "/" + rid
+    r = requests.get(docurl,auth=HTTPBasicAuth('admin','admin'))
+    return json.loads(r.text)
         
         
