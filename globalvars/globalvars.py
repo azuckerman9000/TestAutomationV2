@@ -12,7 +12,7 @@ global MESSAGETYPES
 MESSAGETYPES = ["SOAP","REST"]
 
 global HOSTNAMES
-HOSTNAMES = ["EVO HostCap TestHost","EVO TermCap TestHost","EVO HostCap Sandbox","EVO TermCap Sandbox","EVO TermCap AutoResponder","EVO TermCap TPS","EVO HostCap TPS","EVOIntl HostCap Sandbox","EVO TermCap Prod-AutoResponder"]
+HOSTNAMES = ["EVO HostCap TestHost","EVO TermCap TestHost","EVO HostCap Sandbox","EVO TermCap Sandbox","EVO TermCap AutoResponder","EVO TermCap TPS","EVO HostCap TPS","EVOIntl HostCap Sandbox","EVO TermCap Prod-AutoResponder","EVOIntl HostCap TestHost"]
 
 global INDUSTRYTYPES
 INDUSTRYTYPES = ["Retail","Restaurant","MOTO","Ecommerce"]
@@ -54,7 +54,8 @@ SERVICE_CRED_RELATIONS = {"911C800001":["6B2866C8FD500001","23CE26C8FD500001"],
                           "A01391300C":["764B09E37A61300C"],
                           "A02391300C":["764B09E37A61300C"],
                           "5717F1300C":["764B09E37A61300C","C10CF9E37A61300C"],
-                          "372EC00001":["6B2866C8FD500001", "23CE26C8FD500001"]}
+                          "372EC00001":["6B2866C8FD500001", "23CE26C8FD500001"],
+                          "A2A8200001":["6B2866C8FD500001","23CE26C8FD500001"]}
 
 global CLASS_DEPENDENCIES
 CLASS_DEPENDENCIES = {"Credentials":None,

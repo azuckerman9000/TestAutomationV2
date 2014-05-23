@@ -107,5 +107,12 @@ def getRecord(rid):
     docurl = "http://localhost:2480/document/" + globalvars.DBNAME + "/" + rid
     r = requests.get(docurl,auth=HTTPBasicAuth('admin','admin'))
     return json.loads(r.text)
+
+def updateRecord(rid,data):
+    docurl = "http://localhost:2480/document/" + globalvars.DBNAME + "/"
+    headers = {"content-type":"application/json"}
+    param = {"updateMode":"partial"}
+    r2 = requests.put(docurl + rid, params=param, headers=headers, data=json.dumps(data), auth=HTTPBasicAuth('admin','admin'))
+    print(r2.text)
         
         

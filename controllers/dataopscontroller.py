@@ -48,7 +48,7 @@ class ShowRecController:
         
     def initGUI(self):
         self.queryframe = dataopsview.QueryFrame(self.view,"Query Records",0,2)
-        self.queryframe.createLblText("Enter Record Id","13:1")
+        self.queryframe.createLblText("Enter Record Id","")
         self.queryframe.textbox["Enter Record Id"].config(height=1,width=5)
         self.queryframe.createButton("Get Record")
         self.queryframe.button["Get Record"]["command"] = self.showRecordFields
@@ -60,7 +60,7 @@ class ShowRecController:
                     widget.destroy()             
         rid = self.queryframe.textbox["Enter Record Id"].get("1.0","1.4")
         if rid == "":
-            "No Record Id Entered"
+            print("No Record Id Entered")
             return
         record = dataops.getRecord(rid)
         for key, val in record.items():
@@ -69,14 +69,16 @@ class ShowRecController:
                 self.queryframe.textbox[key].config(height=5,width=45)
                 self.queryframe.textbox[key].edit_modified(False)
         self.queryframe.createButton("Update Record")
-        self.queryframe.button["Update Record"]["command"] = lambda : self.updateRecord(record)
+        self.queryframe.button["Update Record"]["command"] = lambda : self.updateRecord(rid,record)
         
-    def updateRecord(self,record):
+    def updateRecord(self,rid,record):
         fields = {name:text.get("1.0","end").rstrip() for name, text in self.queryframe.textbox.items() if name != "Enter Record Id" and text.edit_modified()}
         if fields != {}:
-            print(fields)
+            for key,val in fields.items():
+                record[key] = val
+            dataops.updateRecord(rid,record)
         else:
-            print("Nothing")
+            print("No Updates to Record Entered.")
                 
         
 db = MainController()
